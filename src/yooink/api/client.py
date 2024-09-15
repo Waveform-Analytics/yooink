@@ -1,7 +1,7 @@
 # src/yooink/api/client.py
 
 import requests
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 class APIClient:
@@ -29,20 +29,25 @@ class APIClient:
         """
         return {'Content-Type': 'application/json'}
 
-    def make_request(self, endpoint: str) -> Any:
+    def make_request(
+            self,
+            endpoint: str,
+            params: Optional[Dict[str, Any]] = None
+    ) -> Any:
         """
-        Sends a GET request to the API.
+        Sends a GET request to the API, with optional parameters.
 
         Args:
             endpoint: The API endpoint to request.
+            params: Optional query parameters for the request.
 
         Returns:
             Any: The parsed JSON response.
         """
         url = self.construct_url(endpoint)
         response = self.session.get(
-            url, auth=self.auth, headers=self.get_headers())
-        response.raise_for_status()  # Raise an exception if the request failed
+            url, auth=self.auth, headers=self.get_headers(), params=params)
+        response.raise_for_status()
         return response.json()
 
     def construct_url(self, endpoint: str) -> str:
@@ -56,3 +61,17 @@ class APIClient:
             The full URL.
         """
         return f"{self.base_url}{endpoint}"
+
+    def fetch_thredds_page(self, thredds_url: str) -> str:
+        """
+        Sends a GET request to the THREDDS server.
+
+        Args:
+            thredds_url: The full URL to the THREDDS server.
+
+        Returns:
+            The HTML content of the page.
+        """
+        response = self.session.get(thredds_url)
+        response.raise_for_status()  # Raise an exception if the request failed
+        return response.text

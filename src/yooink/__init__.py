@@ -1,8 +1,8 @@
-# yooink/__init__.py
+# src/yooink/__init__.py
 
-# Import the submodules
-from . import request
-from . import sensor
+# Import the necessary classes from their modules
+from .api.client import APIClient
+from .request.request_manager import RequestManager
 
-# Define what should be available when 'import yooink' is called
-__all__ = ['request', 'sensor']
+# Optionally, define __all__ to control what's exported when 'import *' is used
+__all__ = ['APIClient', 'RequestManager']
