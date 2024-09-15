@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "yooink"
+version = "0.0.1"
+authors = [
+  { name="Michelle Weirathmueller", email="michelle@waveformanalytics.com" },
+]
+description = "A package for accessing OOI data via the m2m protocol"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/Waveform-Analytics/yooink"
+Issues = "https://github.com/Waveform-Analytics/yooink/issues"
