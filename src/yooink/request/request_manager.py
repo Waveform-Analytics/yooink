@@ -7,7 +7,6 @@ from yooink.api.client import APIClient
 
 import re
 import os
-import requests
 
 
 class RequestManager:
@@ -126,7 +125,8 @@ class RequestManager:
         """
         # Construct the initial request URL and parameters
         details = f"{site}/{node}/{sensor}/{method}"
-        params = {'beginDT': begin_datetime, 'endDT': end_datetime,
+        params = {
+            'beginDT': begin_datetime, 'endDT': end_datetime,
             'format': 'application/netcdf', 'include_provenance': 'true',
             'include_annotations': 'true'}
 
@@ -136,8 +136,8 @@ class RequestManager:
         # Extract the first URL from 'allURLs'
         url_thredds = response['allURLs'][0]
 
-        # Retrieve the available datasets from the THREDDS server
-        datasets_page = requests.get(url_thredds).text
+        # Fetch the HTML page from the THREDDS server via APIClient
+        datasets_page = self.api_client.fetch_thredds_page(url_thredds)
 
         # Extract the .nc file URLs
         file_matches = re.findall(r'(ooi/.*?.nc)', datasets_page)
