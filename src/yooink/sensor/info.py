@@ -14,6 +14,6 @@ def get_site_list() -> list:
     Return a list of all the sites in the network.
 
     Returns:
-        List of strings
+        List of strings describing the sites.
 
     """
