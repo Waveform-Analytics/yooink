@@ -66,7 +66,7 @@ class APIClient:
     def fetch_thredds_page(
             self,
             thredds_url: str,
-            retries: int = 5,
+            retries: int = 6,
             backoff_factor: float = 2.0
     ) -> str:
         """
@@ -94,7 +94,7 @@ class APIClient:
                 if e.response.status_code == 404:
                     attempt += 1
                     delay = backoff_factor ** attempt
-                    print(f"Data not ready yet, retrying in {delay} "
+                    print(f"Thredds data not ready yet, retrying in {delay} "
                           f"seconds...")
                     time.sleep(delay)
                 else:
