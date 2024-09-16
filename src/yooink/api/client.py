@@ -1,5 +1,6 @@
 # src/yooink/api/client.py
 
+import time
 import requests
 from typing import Dict, Any, Optional
 
@@ -25,7 +26,7 @@ class APIClient:
         Returns headers for the API request.
 
         Returns:
-            Dict: A dictionary containing headers.
+            A dictionary containing headers.
         """
         return {'Content-Type': 'application/json'}
 
@@ -42,7 +43,7 @@ class APIClient:
             params: Optional query parameters for the request.
 
         Returns:
-            Any: The parsed JSON response.
+            The parsed JSON response.
         """
         url = self.construct_url(endpoint)
         response = self.session.get(
@@ -62,16 +63,42 @@ class APIClient:
         """
         return f"{self.base_url}{endpoint}"
 
-    def fetch_thredds_page(self, thredds_url: str) -> str:
+    def fetch_thredds_page(
+            self,
+            thredds_url: str,
+            retries: int = 5,
+            backoff_factor: float = 2.0
+    ) -> str:
         """
-        Sends a GET request to the THREDDS server.
+        Sends a GET request to the THREDDS server, with retry mechanism for handling
+        delays in data availability.
 
         Args:
             thredds_url: The full URL to the THREDDS server.
+            retries: The number of retry attempts if the data is not ready.
+            backoff_factor: Multiplier for delay between retries.
 
         Returns:
             The HTML content of the page.
+
+        Raises:
+            Exception: If the data is still unavailable after the retry limit.
         """
-        response = self.session.get(thredds_url)
-        response.raise_for_status()  # Raise an exception if the request failed
-        return response.text
+        attempt = 0
+        while attempt < retries:
+            try:
+                response = self.session.get(thredds_url)
+                response.raise_for_status()
+                return response.text
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    attempt += 1
+                    delay = backoff_factor ** attempt
+                    print(f"Data not ready yet, retrying in {delay} "
+                          f"seconds...")
+                    time.sleep(delay)
+                else:
+                    raise
+        else:
+            raise Exception(f"Data still not available after {retries} "
+                            f"retries.")

@@ -13,7 +13,9 @@ class DataManager:
     def filter_datasets(datasets: List[str], exclude: str = "VELPT"
     ) -> List[str]:
         """
-        Filters the dataset URLs to exclude certain instruments (e.g., 'VELPT').
+        Filters the dataset URLs to exclude certain instruments (e.g.,
+        'VELPT'). This function may not be that flexible, so it may end up
+        being either removed or expanded. TBD. Enjoy it while it lasts!
 
         Args:
             datasets: A list of dataset URLs.
