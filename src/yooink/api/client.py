@@ -66,12 +66,12 @@ class APIClient:
     def fetch_thredds_page(
             self,
             thredds_url: str,
-            retries: int = 6,
+            retries: int = 5,
             backoff_factor: float = 2.0
     ) -> str:
         """
-        Sends a GET request to the THREDDS server, with retry mechanism for handling
-        delays in data availability.
+        Sends a GET request to the THREDDS server, with retry mechanism for
+        handling delays in data availability.
 
         Args:
             thredds_url: The full URL to the THREDDS server.

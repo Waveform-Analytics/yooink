@@ -1,0 +1,7 @@
+pydap
+h5netcdf
+netCDF4
+h5py
+xarray
+yooink
+dask
