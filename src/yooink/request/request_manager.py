@@ -248,4 +248,10 @@ class RequestManager:
         datasets = [os.path.join(tds_url, match) for match in file_matches if
                     match.endswith('.nc')]
 
-        return datasets
+        # Only keep nc files that end in a numerical identifier
+        filtered_files = [
+            f for f in datasets
+            if f.endswith('.nc') and f[:-3][-4:].isdigit()
+        ]
+
+        return filtered_files
