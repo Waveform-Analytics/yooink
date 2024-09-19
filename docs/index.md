@@ -25,8 +25,13 @@ pip install yooink
 A lot of what's "under the hood", so to speak, is gleaned from either the 
 [OOI API cheat sheet](https://ooifb.org/wp-content/uploads/2023/03/API_Cheat_Sheet.pdf)
 or from this [Jupyter notebook](https://github.com/ooi-data-review/2018-data-workshops/blob/master/chemistry/examples/quickstart_python.ipynb) 
-that walks through an example set-up for accessing data using Python. So if 
-you'd like to learn more please check out those resources.
+that walks through an example set-up for accessing data using Python. 
+
+The OOI github organization also hosts [this awesome Python toolset](https://github.com/oceanobservatories/ooi-data-explorations/tree/master/python) if you 
+need something more sophisticated, although it does require a bit more work 
+to get up and running (you'll need to clone it and run locally in 
+development mode).
+
 
 ## Code
 
