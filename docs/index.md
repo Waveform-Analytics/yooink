@@ -1,4 +1,4 @@
-![Yooink text logo](https://github.com/Waveform-Analytics/yooink/blob/1425dc9feb25ba4765d44e0fa151468720d92f63/assets/final-text-sm.png)
+![Yooink text logo](assets/text-logo.png)
 
 # Yooink Documentation
 
