@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "yooink"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
   { name="Michelle Weirathmueller", email="michelle@waveformanalytics.com" },
 ]
@@ -16,7 +16,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+license = {file = "LICENSE"}
+keywords = ["OOI", "ocean observatory data"]
 
 [project.urls]
-Homepage = "https://github.com/Waveform-Analytics/yooink"
+Repository = "https://github.com/Waveform-Analytics/yooink"
+Documentation = "https://github.com/Waveform-Analytics/yooink"
 Issues = "https://github.com/Waveform-Analytics/yooink/issues"
