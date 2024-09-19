@@ -7,12 +7,16 @@ data, specifically the OOI data that is accessible via the M2M
 
 There's nothing terribly fancy happening here - yooink essentially provides a 
 wrapper around the existing API to make data query and access a bit simpler.
-It abstracts away some of the things you may not want to code up manually - 
-so you can get the data you want more efficiently!
+It abstracts away some of the things you may not want to code up manually 
+every time - so you can get the data you want more efficiently!
 
 ## Installation
 
-Coming soon!
+You can install this package from PyPI using:
+
+```bash
+pip install yooink
+```
 
 ## References
 
@@ -21,3 +25,7 @@ A lot of what's "under the hood", so to speak, is gleaned from either the
 or from this [Jupyter notebook](https://github.com/ooi-data-review/2018-data-workshops/blob/master/chemistry/examples/quickstart_python.ipynb) 
 that walks through an example set-up for accessing data using Python. So if 
 you'd like to learn more please check out those resources.
+
+## Code
+
+You can find the repository [here](https://github.com/Waveform-Analytics/yooink).
