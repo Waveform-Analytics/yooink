@@ -6,6 +6,8 @@ theme:
     - navigation.instant
   logo: assets/logo.png
   favicon: assets/logo.png
+  palette:
+    primary: black
 
 markdown_extensions:
   - attr_list

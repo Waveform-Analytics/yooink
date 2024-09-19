@@ -30,4 +30,4 @@ you'd like to learn more please check out those resources.
 
 ## Code
 
-You can find the repository [here](https://github.com/Waveform-Analytics/yooink).
+You can find the Github repository [here](https://github.com/Waveform-Analytics/yooink).
