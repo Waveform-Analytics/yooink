@@ -1,7 +1,12 @@
 # yooink
 
 A Python package to access Ocean Observatories Initiative (OOI) data via 
-the m2m (machine to machine) interface API. 
+the m2m (machine to machine) interface. 
+
+## Documentation
+
+For more information about how to install and use yooink, check out the 
+documentation site: *Coming soon!*
 
 ## Development
 
