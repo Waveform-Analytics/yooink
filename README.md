@@ -1,3 +1,5 @@
+![Yooink text logo](https://github.com/Waveform-Analytics/yooink/blob/1ef035f1efc5e67fbdd9ccbe98a763f47d80b44f/assets/yooink-logo.png)
+
 # yooink
 
 A Python package to access Ocean Observatories Initiative (OOI) data via 
