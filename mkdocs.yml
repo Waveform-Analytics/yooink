@@ -4,6 +4,8 @@ theme:
   name: material
   features:
     - navigation.instant
+  logo: assets/logo.png
+  favicon: assets/logo.png
 
 nav:
   - Home: index.md
