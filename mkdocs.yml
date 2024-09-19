@@ -1,4 +1,4 @@
-site_name: Documentation for yooink
+site_name: yooink docs
 
 theme:
   name: material
@@ -16,3 +16,4 @@ markdown_extensions:
 nav:
   - Home: index.md
   - About: about.md
+  - Quick start: quick-start.md
