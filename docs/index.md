@@ -14,7 +14,7 @@ every time - so you can get the data you want more efficiently!
 
 ## Installation
 
-You can install this package from PyPI using:
+You can install this package from [PyPI](https://pypi.org/project/yooink/) using:
 
 ```bash
 pip install yooink

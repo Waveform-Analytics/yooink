@@ -7,7 +7,7 @@ the m2m (machine to machine) interface.
 
 ## Quick Setup
 
-You can install this package using:
+You can install this package from [PyPI](https://pypi.org/project/yooink/) using:
 
 ```bash
 pip install yooink
