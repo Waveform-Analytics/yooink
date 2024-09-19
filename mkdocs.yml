@@ -7,5 +7,9 @@ theme:
   logo: assets/logo.png
   favicon: assets/logo.png
 
+markdown_extensions:
+  - attr_list
+  - md_in_html
+
 nav:
   - Home: index.md
