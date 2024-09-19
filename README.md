@@ -3,19 +3,16 @@
 A Python package to access Ocean Observatories Initiative (OOI) data via 
 the m2m (machine to machine) interface. 
 
-## Documentation
+## Quick Setup
 
-For more information about how to install and use yooink, check out the 
-documentation site: *Coming soon!*
-
-## Development
-
-This project is still in early development. To access and work on it, clone 
-this repository. In a terminal window, navigate to the same folder where 
-the pyproject.toml is located, and enter the following command:
+You can install this package using:
 
 ```bash
-pip install -e .
+pip install yooink
 ```
 
-*note: The dot at the end is important!*
+## Usage
+
+For more information about how to install and use yooink, check out the 
+[yooink documentation site](https://waveform-analytics.github.io/yooink/).
+
