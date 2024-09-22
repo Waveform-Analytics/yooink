@@ -2,23 +2,62 @@
 
 import time
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional
+from enum import Enum
 
+
+class M2MInterface(Enum):
+    ANNO_URL = '12580/anno/'  # Annotation Information
+    ASSET_URL = '12587/asset/'  # Asset and Calibration Information
+    DEPLOY_URL = '12587/events/deployment/inv/'  # Deployment Information
+    SENSOR_URL = '12576/sensor/inv/'  # Sensor Information
+    VOCAB_URL = '12586/vocab/inv/'  # Vocabulary Information
+    STREAM_URL = '12575/stream/byname/'  # Stream Information
+    PARAMETER_URL = '12575/parameter/'  # Parameter Information
 
 class APIClient:
-    def __init__(self, base_url: str, username: str, token: str) -> None:
+    # Set Up Constants:
+    # Base URL for accessing OOI data
+    BASE_URL = 'https://ooinet.oceanobservatories.org/api/m2m/'
+    # different M2M interfaces to the base URL
+    ANNO_URL = '12580/anno/'  # Annotation Information
+    ASSET_URL = '12587/asset/'  # Asset and Calibration Information
+    DEPLOY_URL = '12587/events/deployment/inv/'  # Deployment Information
+    SENSOR_URL = '12576/sensor/inv/'  # Sensor Information
+    VOCAB_URL = '12586/vocab/inv/'  # Vocabulary Information
+    STREAM_URL = '12575/stream/byname/'  # Stream Information
+    PARAMETER_URL = '12575/parameter/'  # Parameter Information
+
+    def __init__(self, username: str, token: str) -> None:
         """
         Initializes the APIClient with base URL, API username, and token for
         authentication.
 
         Args:
-            base_url: The base URL for the API.
-            username: The API username.
+=           username: The API username.
             token: The API authentication token.
         """
-        self.base_url = base_url
         self.auth = (username, token)
         self.session = requests.Session()
+        self._setup_retries()
+
+    def _setup_retries(self) -> None:
+        """
+        Configures retries for the session with backoff strategy and retry limits.
+        """
+        retry_strategy = Retry(
+            total=5,
+            backoff_factor=0.5,
+            status_forcelist=[404, 429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "OPTIONS"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+
+        # Mount the retry adapter for both HTTP and HTTPS requests
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
     @staticmethod
     def get_headers() -> Dict[str, str]:
@@ -32,6 +71,7 @@ class APIClient:
 
     def make_request(
             self,
+            interface: M2MInterface,
             endpoint: str,
             params: Optional[Dict[str, Any]] = None
     ) -> Any:
@@ -39,66 +79,46 @@ class APIClient:
         Sends a GET request to the API, with optional parameters.
 
         Args:
+            interface: The M2M interface to use (from M2MInterface Enum).
             endpoint: The API endpoint to request.
             params: Optional query parameters for the request.
 
         Returns:
             The parsed JSON response.
         """
-        url = self.construct_url(endpoint)
+        url = self.construct_url(interface, endpoint)
         response = self.session.get(
             url, auth=self.auth, headers=self.get_headers(), params=params)
         response.raise_for_status()
         return response.json()
 
-    def construct_url(self, endpoint: str) -> str:
+    def construct_url(self, interface: M2MInterface, endpoint: str) -> str:
         """
-        Constructs the full URL for the API request.
+        Constructs the full URL for the API request based on the interface and endpoint.
 
         Args:
-            endpoint: The endpoint to append to the base URL.
+            interface: The M2M interface to use (from M2MInterface Enum).
+            endpoint: The specific endpoint to append to the interface.
 
         Returns:
             The full URL.
         """
-        return f"{self.base_url}{endpoint}"
+        return f"{self.BASE_URL}{interface.value}{endpoint}"
 
-    def fetch_thredds_page(
-            self,
-            thredds_url: str,
-            retries: int = 5,
-            backoff_factor: float = 2.0
-    ) -> str:
+    def fetch_thredds_page(self, thredds_url: str) -> str:
         """
-        Sends a GET request to the THREDDS server, with retry mechanism for
-        handling delays in data availability.
+        Sends a GET request to the THREDDS server. Uses the session's
+        built-in retry mechanism for handling delays in data availability.
 
         Args:
             thredds_url: The full URL to the THREDDS server.
-            retries: The number of retry attempts if the data is not ready.
-            backoff_factor: Multiplier for delay between retries.
 
         Returns:
             The HTML content of the page.
 
         Raises:
-            Exception: If the data is still unavailable after the retry limit.
+            Exception: If the data is still unavailable after exhausting retries.
         """
-        attempt = 0
-        while attempt < retries:
-            try:
-                response = self.session.get(thredds_url)
-                response.raise_for_status()
-                return response.text
-            except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 404:
-                    attempt += 1
-                    delay = backoff_factor ** attempt
-                    print(f"Thredds data not ready yet, retrying in {delay} "
-                          f"seconds...")
-                    time.sleep(delay)
-                else:
-                    raise
-        else:
-            raise Exception(f"Data still not available after {retries} "
-                            f"retries.")
+        response = self.session.get(thredds_url)
+        response.raise_for_status()
+        return response.text

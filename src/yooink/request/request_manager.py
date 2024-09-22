@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
-from yooink.api.client import APIClient
+from typing import Any, Dict, List, Optional
+from yooink.api.client import APIClient, M2MInterface
 
 import re
 import os
@@ -18,7 +18,7 @@ class RequestManager:
     def __init__(
             self,
             api_client: 'APIClient',
-            use_file_cache: bool = False,
+            use_file_cache: bool = True,
             cache_expiry: int = 14
     ) -> None:
         """
@@ -123,7 +123,7 @@ class RequestManager:
             A list of sites as dictionaries.
         """
         endpoint = ""
-        return self.api_client.make_request(endpoint)
+        return self.api_client.make_request(M2MInterface.SENSOR_URL, endpoint)
 
     def list_nodes(self, site: str) -> List[Dict[str, Any]]:
         """
@@ -136,7 +136,7 @@ class RequestManager:
             List: A list of nodes as dictionaries.
         """
         endpoint = f"{site}/"
-        return self.api_client.make_request(endpoint)
+        return self.api_client.make_request(M2MInterface.SENSOR_URL, endpoint)
 
     def list_sensors(self, site: str, node: str) -> List[Dict[str, Any]]:
         """
@@ -150,7 +150,7 @@ class RequestManager:
             List: A list of sensors as dictionaries.
         """
         endpoint = f"{site}/{node}/"
-        return self.api_client.make_request(endpoint)
+        return self.api_client.make_request(M2MInterface.SENSOR_URL, endpoint)
 
     def list_methods(
             self, site: str, node: str, sensor: str) -> List[Dict[str, Any]]:
@@ -166,7 +166,7 @@ class RequestManager:
             A list of methods as dictionaries.
         """
         endpoint = f"{site}/{node}/{sensor}/"
-        return self.api_client.make_request(endpoint)
+        return self.api_client.make_request(M2MInterface.SENSOR_URL, endpoint)
 
     def get_metadata(
             self, site: str, node: str, sensor: str) -> Dict[str, Any]:
@@ -182,7 +182,7 @@ class RequestManager:
             The metadata as a dictionary.
         """
         endpoint = f"{site}/{node}/{sensor}/metadata"
-        return self.api_client.make_request(endpoint)
+        return self.api_client.make_request(M2MInterface.SENSOR_URL, endpoint)
 
     def list_streams(
             self, site: str, node: str, sensor: str, method: str) \
@@ -200,6 +200,92 @@ class RequestManager:
             A list of streams as dictionaries.
         """
         endpoint = f"{site}/{node}/{sensor}/{method}/"
+        return self.api_client.make_request(M2MInterface.SENSOR_URL, endpoint)
+
+    def list_deployments(
+            self, site: str, node: str, sensor: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Lists deployments for a specific site, node, and sensor.
+
+        Args:
+            site: The site identifier.
+            node: The node identifier.
+            sensor: The sensor identifier.
+
+        Returns:
+            A list of deployments as dictionaries.
+        """
+        endpoint = f"{site}/{node}/{sensor}"
+        return self.api_client.make_request(M2MInterface.DEPLOY_URL, endpoint)
+
+    def get_sensor_information(
+            self, site: str, node: str, sensor: str, deploy: str|int
+    ) -> list:
+        """
+        Retrieves sensor metadata for a specific deployment.
+
+        Args:
+            site: The site identifier.
+            node: The node identifier.
+            sensor: The sensor identifier.
+            deploy: The deployment number.
+
+        Returns:
+            The sensor information as a dictionary.
+        """
+        endpoint = f"{site}/{node}/{sensor}/{str(deploy)}"
+        return self.api_client.make_request(M2MInterface.DEPLOY_URL, endpoint)
+
+    def get_deployment_dates(
+            self, site: str, node: str, sensor: str, deploy: str|int
+    ) -> Optional[Dict[str, str]]:
+        """
+        Retrieves the start and stop dates for a specific deployment.
+
+        Args:
+            site: The site identifier.
+            node: The node identifier.
+            sensor: The sensor identifier.
+            deploy: The deployment number.
+
+        Returns:
+            A dictionary with the start and stop dates, or None if the
+                information is not available.
+        """
+        sensor_info = self.get_sensor_information(site, node, sensor,
+                                                  str(deploy))
+
+        if sensor_info:
+            start = time.strftime(
+                '%Y-%m-%dT%H:%M:%S.000Z',
+                time.gmtime(sensor_info[0]['eventStartTime'] / 1000.0))
+
+            if sensor_info[0].get('eventStopTime'):
+                stop = time.strftime(
+                    '%Y-%m-%dT%H:%M:%S.000Z',
+                    time.gmtime(sensor_info[0]['eventStopTime'] / 1000.0))
+            else:
+                stop = time.strftime(
+                    '%Y-%m-%dT%H:%M:%S.000Z',
+                    time.gmtime(time.time()))
+
+            return {'start': start, 'stop': stop}
+        else:
+            return None
+
+    def get_sensor_history(self, uid: str) -> Dict[str, Any]:
+        """
+        Retrieves the asset and calibration information for a sensor across all
+        deployments.
+
+        Args:
+            uid: The unique asset identifier (UID).
+
+        Returns:
+            The sensor history as a dictionary.
+        """
+        endpoint = f"asset/deployments/{uid}?editphase=ALL"
         return self.api_client.make_request(endpoint)
 
     def fetch_data_urls(
