@@ -306,20 +306,12 @@ class RequestManager:
         return self.api_client.make_request(M2MInterface.DEPLOY_URL, endpoint)
 
     def fetch_data_urls(
-            self,
-            site: str,
-            node: str,
-            sensor: str,
-            method: str,
-            stream: str,
-            begin_datetime: str,
-            end_datetime: str,
-            use_dask=False
-    ) -> List[xr.Dataset]:
+            self, site: str, node: str, sensor: str, method: str,
+            stream: str, begin_datetime: str, end_datetime: str,
+            use_dask=False) -> Dataset | None:
         """
         Fetch the URLs for netCDF files from the THREDDS server based on site,
-        node, data, and method. Caches the THREDDS URL to avoid repeating the
-        same request.
+        node, data, and method.
 
         Args:
             site: Site identifier.
@@ -335,35 +327,17 @@ class RequestManager:
         Returns:
             A list of xarray datasets, merged from the fetched files.
         """
-        # Construct a cache key using relevant details
-        cache_key = (f"{site}_{node}_{sensor}_{method}_{stream}_"
-                     f"{begin_datetime}_{end_datetime}")
+        # Make the M2M request and wait for completion
+        print(f"Requesting data for site: {site}, node: {node}, "
+              f"sensor: {sensor}, method: {method}, stream: {stream}")
+        data = self.wait_for_m2m_data(site, node, sensor, method, stream,
+                                      begin_datetime, end_datetime)
+        if not data:
+            print("Request failed or timed out. Please try again later.")
+            return None
 
-        # Check if this request has been cached
-        if cache_key in self.cached_urls:
-            print("Using cached URL for this request.")
-            datasets = self.cached_urls[cache_key]['urls']
-        else:
-            # Make the M2M request and wait for completion
-            print(
-                f"Requesting data for site: {site}, node: {node}, "
-                f"sensor: {sensor}, method: {method}, stream: {stream}")
-            data = self.wait_for_m2m_data(site, node, sensor, method, stream,
-                                          begin_datetime, end_datetime)
-            if not data:
-                print("Request failed or timed out. Please try again later.")
-                return []
-
-            # Extract URLs from the M2M response
-            datasets = self.get_filtered_files(data)
-
-            # Save URLs to cache
-            self.cached_urls[cache_key] = {
-                'urls': datasets,
-                'timestamp': time.time()}
-
-            if self.use_file_cache:
-                self.save_cache_to_file()
+        # Extract URLs from the M2M response
+        datasets = self.get_filtered_files(data)
 
         # Process the files (parallelize if > 5 files)
         if len(datasets) > 5:
@@ -381,9 +355,8 @@ class RequestManager:
         return self.merge_frames(frames)
 
     def wait_for_m2m_data(
-            self, site: str, node: str, sensor: str,
-            method: str, stream: str, begin_datetime: str,
-            end_datetime: str) -> Any | None:
+            self, site: str, node: str, sensor: str, method: str,
+            stream: str, begin_datetime: str, end_datetime: str) -> Any | None:
         """
         Request data from the M2M API and wait for completion, displaying
         progress with tqdm.
@@ -396,8 +369,8 @@ class RequestManager:
         details = f"{site}/{node}/{sensor}/{method}/{stream}"
 
         # Make the request
-        response = self.api_client.make_request(
-            M2MInterface.SENSOR_URL, details, params)
+        response = self.api_client.make_request(M2MInterface.SENSOR_URL,
+            details, params)
 
         if 'allURLs' not in response:
             print("No URLs found in the response.")
@@ -408,10 +381,16 @@ class RequestManager:
                re.match(r'.*async_results.*', url)][0]
         check_complete = url + '/status.txt'
 
+        # Cache the URL now, as we've successfully submitted the request
+        self.cached_urls[f"{site}_{node}_{sensor}_{method}_{stream}"] = {
+            'url': url, 'timestamp': time.time()}
+
+        if self.use_file_cache:
+            self.save_cache_to_file()
+
         # Use tqdm to wait for completion
-        print(
-            "Waiting for OOINet to process and prepare the data. This may "
-            "take up to 20 minutes.")
+        print("Waiting for OOINet to process and prepare the data. This may "
+              "take up to 20 minutes.")
         with tqdm(total=400, desc='Waiting', file=sys.stdout) as bar:
             for i in range(400):
                 r = self.api_client.session.get(check_complete)
