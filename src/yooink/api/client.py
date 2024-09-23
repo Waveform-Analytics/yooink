@@ -1,6 +1,5 @@
 # src/yooink/api/client.py
 
-import time
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -16,6 +15,7 @@ class M2MInterface(Enum):
     VOCAB_URL = '12586/vocab/inv/'  # Vocabulary Information
     STREAM_URL = '12575/stream/byname/'  # Stream Information
     PARAMETER_URL = '12575/parameter/'  # Parameter Information
+
 
 class APIClient:
     # Set Up Constants:
@@ -45,7 +45,8 @@ class APIClient:
 
     def _setup_retries(self) -> None:
         """
-        Configures retries for the session with backoff strategy and retry limits.
+        Configures retries for the session with backoff strategy and retry
+        limits.
         """
         retry_strategy = Retry(
             total=5,
@@ -117,7 +118,7 @@ class APIClient:
             The HTML content of the page.
 
         Raises:
-            Exception: If the data is still unavailable after exhausting retries.
+            Exception: If the data is still unavailable after all retries.
         """
         response = self.session.get(thredds_url)
         response.raise_for_status()
