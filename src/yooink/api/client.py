@@ -8,6 +8,7 @@ from enum import Enum
 
 
 class M2MInterface(Enum):
+    """Enum for different M2M interfaces."""
     ANNO_URL = '12580/anno/'  # Annotation Information
     ASSET_URL = '12587/asset/'  # Asset and Calibration Information
     DEPLOY_URL = '12587/events/deployment/inv/'  # Deployment Information
@@ -18,17 +19,8 @@ class M2MInterface(Enum):
 
 
 class APIClient:
-    # Set Up Constants:
-    # Base URL for accessing OOI data
+    """Client for interacting with the OOI API."""
     BASE_URL = 'https://ooinet.oceanobservatories.org/api/m2m/'
-    # different M2M interfaces to the base URL
-    ANNO_URL = '12580/anno/'  # Annotation Information
-    ASSET_URL = '12587/asset/'  # Asset and Calibration Information
-    DEPLOY_URL = '12587/events/deployment/inv/'  # Deployment Information
-    SENSOR_URL = '12576/sensor/inv/'  # Sensor Information
-    VOCAB_URL = '12586/vocab/inv/'  # Vocabulary Information
-    STREAM_URL = '12575/stream/byname/'  # Stream Information
-    PARAMETER_URL = '12575/parameter/'  # Parameter Information
 
     def __init__(self, username: str, token: str) -> None:
         """
@@ -95,7 +87,8 @@ class APIClient:
 
     def construct_url(self, interface: M2MInterface, endpoint: str) -> str:
         """
-        Constructs the full URL for the API request based on the interface and endpoint.
+        Constructs the full URL for the API request based on the interface and
+        endpoint.
 
         Args:
             interface: The M2M interface to use (from M2MInterface Enum).
