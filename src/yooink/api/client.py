@@ -41,24 +41,24 @@ class APIClient:
         """
         self.auth = (username, token)
         self.session = requests.Session()
-        self._setup_retries()
+        # self._setup_retries()
 
-    def _setup_retries(self) -> None:
-        """
-        Configures retries for the session with backoff strategy and retry
-        limits.
-        """
-        retry_strategy = Retry(
-            total=5,
-            backoff_factor=0.5,
-            status_forcelist=[404, 429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "OPTIONS"],
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-
-        # Mount the retry adapter for both HTTP and HTTPS requests
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
+    # def _setup_retries(self) -> None:
+    #     """
+    #     Configures retries for the session with backoff strategy and retry
+    #     limits.
+    #     """
+    #     retry_strategy = Retry(
+    #         total=5,
+    #         backoff_factor=0.5,
+    #         status_forcelist=[404, 429, 500, 502, 503, 504],
+    #         allowed_methods=["HEAD", "GET", "OPTIONS"],
+    #     )
+    #     adapter = HTTPAdapter(max_retries=retry_strategy)
+    #
+    #     # Mount the retry adapter for both HTTP and HTTPS requests
+    #     self.session.mount("https://", adapter)
+    #     self.session.mount("http://", adapter)
 
     @staticmethod
     def get_headers() -> Dict[str, str]:

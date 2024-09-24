@@ -320,12 +320,13 @@ class RequestManager:
         # Check if the request is already cached
         if cache_key in self.cached_urls:
             print(f"Using cached URL for request: {cache_key}")
-            cached_url = self.cached_urls[cache_key]['url']
+            async_url = self.cached_urls[cache_key]['async_url']
+            tds_url = self.cached_urls[cache_key]['tds_url']
             # You can now re-check the status of this request
-            check_complete = cached_url + '/status.txt'
+            check_complete = async_url + '/status.txt'
             response = self.api_client.session.get(check_complete)
             if response.status_code == requests.codes.ok:
-                datasets = self.get_filtered_files({'allURLs': [cached_url]})
+                datasets = self.get_filtered_files({'allURLs': [tds_url]})
             else:
                 print(f"Data not ready yet for cached request: {cache_key}")
                 return None
@@ -364,7 +365,8 @@ class RequestManager:
         progress with tqdm.
         """
         # Step 1: Set up request details
-        params = {'beginDT': begin_datetime, 'endDT': end_datetime,
+        params = {
+            'beginDT': begin_datetime, 'endDT': end_datetime,
             'format': 'application/netcdf', 'include_provenance': 'true',
             'include_annotations': 'true'}
         details = f"{site}/{node}/{sensor}/{method}/{stream}"
@@ -380,11 +382,17 @@ class RequestManager:
         # Step 3: Extract the async URL and status URL
         url = [url for url in response['allURLs'] if
                re.match(r'.*async_results.*', url)][0]
+        thredds_url = response['allURLs'][0]
         check_complete = url + '/status.txt'
 
         # Step 4: Cache the URL immediately after the request is submitted
-        cache_key = f"{site}_{node}_{sensor}_{method}_{stream}"
-        self.cached_urls[cache_key] = {'url': url, 'timestamp': time.time()}
+        cache_key = (f"{site}_{node}_{sensor}_{method}_{stream}_"
+                     f"{begin_datetime}_{end_datetime}")
+        self.cached_urls[cache_key] = {
+            'tds_url': thredds_url,
+            'async_url': url,
+            'timestamp': time.time()
+        }
 
         if self.use_file_cache:
             self.save_cache_to_file()  # Save cache immediately
@@ -395,14 +403,20 @@ class RequestManager:
             "take up to 20 minutes.")
         with tqdm(total=400, desc='Waiting', file=sys.stdout) as bar:
             for i in range(400):
-                r = self.api_client.session.get(check_complete)
+                try:
+                    r = self.api_client.session.get(check_complete,
+                                                    timeout=(3.05, 120))
+                    if r.status_code == 200:  # Data is ready
+                        bar.n = 400  # Complete the progress bar
+                        return response
+                    elif r.status_code == 404:
+                        pass
+                except requests.exceptions.RequestException as e:
+                    print(f"Error during status check: {e}")
+
                 bar.update()
                 bar.refresh()
-                if r.status_code == requests.codes.ok:
-                    bar.n = 400  # Complete the progress bar
-                    return response  # Data is ready
-                else:
-                    time.sleep(3)  # Wait 3 seconds between checks
+                time.sleep(3)  # Wait 3 seconds between checks
 
         # If we exit the loop without the request being ready, return None
         print("Data request timed out. Please try again later.")
