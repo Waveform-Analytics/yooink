@@ -5,56 +5,52 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from bs4 import BeautifulSoup
+from xarray import Dataset
 
 from yooink.api.client import APIClient, M2MInterface
-from yooink.data.data_manager import DataManager
 
 import re
 import json
 import time
+import tempfile
+from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 import os
 import xarray as xr
 import requests
 import sys
+from functools import partial
+import warnings
+import io
+import numpy as np
 
 
 class RequestManager:
-    """
-    Class responsible for managing requests
-
-    This class communicates with both the API client and the data manager
-    classes.
-
-    """
     CACHE_FILE = "url_cache.json"
 
     def __init__(
             self,
-            api_client: APIClient,
-            data_manager: DataManager,
+            api_client: 'APIClient',
             use_file_cache: bool = True,
             cache_expiry: int = 14
     ) -> None:
         """
-        Initializes the RequestManager with an instance of APIClient,
-        DataManager, and cache options.
+        Initializes the RequestManager with an instance of APIClient and cache
+        options.
 
         Args:
             api_client: An instance of the APIClient class.
-            data_manager: An instance of the DataManager class.
             use_file_cache: Whether to enable file-based caching (default
                 False).
             cache_expiry: The number of days before cache entries expire
                 (default 14 days).
         """
         self.api_client = api_client
-        self.data_manager = data_manager
         self.cached_urls = {}
         self.use_file_cache = use_file_cache
         self.cache_expiry = cache_expiry
 
-        # Load cache if it's available
+        # Load cache from file if enabled
         if self.use_file_cache:
             self.load_cache_from_file()
 
@@ -113,9 +109,24 @@ class RequestManager:
         # Merge the in-memory cache with the file cache
         file_cache.update(self.cached_urls)
 
-        # Write the cache to file
-        with open(self.CACHE_FILE, 'w') as file:
-            json.dump(file_cache, file)
+        # Write the merged cache to a temporary file, then replace the original
+        # file
+        temp_file = None
+        try:
+            temp_dir = os.path.dirname(self.CACHE_FILE)
+            with tempfile.NamedTemporaryFile('w', dir=temp_dir,
+                                             delete=False) as temp_file:
+                json.dump(file_cache, temp_file)
+
+            # Replace the original cache file with the temp file
+            os.replace(temp_file.name, self.CACHE_FILE)
+
+        except Exception as e:
+            print(f"Error saving cache: {e}")
+
+            # Ensure temp file is deleted if something goes wrong
+            if temp_file:
+                os.remove(temp_file.name)
 
     def list_sites(self) -> List[Dict[str, Any]]:
         """
@@ -294,19 +305,13 @@ class RequestManager:
         endpoint = f"asset/deployments/{uid}?editphase=ALL"
         return self.api_client.make_request(M2MInterface.DEPLOY_URL, endpoint)
 
-    def fetch_data(
-            self,
-            site: str,
-            node: str,
-            sensor: str,
-            method: str,
-            stream: str,
-            begin_datetime: str,
-            end_datetime: str,
-            use_dask: bool = False
-    ) -> xr.Dataset | None:
+    def fetch_data_urls(
+            self, site: str, node: str, sensor: str, method: str,
+            stream: str, begin_datetime: str, end_datetime: str,
+            use_dask=False) -> Dataset | None:
         """
-        Fetch the data from the THREDDS server based on instrument attributes.
+        Fetch the URLs for netCDF files from the THREDDS server based on site,
+        node, data, and method.
 
         Args:
             site: Site identifier.
@@ -320,9 +325,9 @@ class RequestManager:
                 arrays.
 
         Returns:
-            An xarray.Dataset containing the compiled data from the THREDDS
-            server, or None.
+            A list of xarray datasets, merged from the fetched files.
         """
+        # Make the M2M request and wait for completion
         print(f"Requesting data for site: {site}, node: {node}, "
               f"sensor: {sensor}, method: {method}, stream: {stream}")
         data = self.wait_for_m2m_data(site, node, sensor, method, stream,
@@ -331,24 +336,27 @@ class RequestManager:
             print("Request failed or timed out. Please try again later.")
             return None
 
+        # Extract URLs from the M2M response
         datasets = self.get_filtered_files(data)
 
-        frames = self.data_manager.process_files(datasets, use_dask)
-        merged_data = self.data_manager.merge_datasets(frames)
-        optimized_data = self.data_manager.optimize_dataset(merged_data)
+        # Process the files (parallelize if > 5 files)
+        if len(datasets) > 5:
+            part_files = partial(self.process_file, use_dask=use_dask)
+            with ProcessPoolExecutor(max_workers=4) as executor:
+                frames = list(tqdm(executor.map(part_files, datasets),
+                                   total=len(datasets),
+                                   desc='Processing files'))
+        else:
+            # Sequential processing for 5 or fewer files
+            frames = [self.process_file(f, use_dask=use_dask) for f in
+                      tqdm(datasets, desc='Processing files')]
 
-        return optimized_data
+        # Merge the frames
+        return self.merge_frames(frames)
 
     def wait_for_m2m_data(
-            self,
-            site: str,
-            node: str,
-            sensor: str,
-            method: str,
-            stream: str,
-            begin_datetime: str,
-            end_datetime: str
-    ) -> Any | None:
+            self, site: str, node: str, sensor: str, method: str,
+            stream: str, begin_datetime: str, end_datetime: str) -> Any | None:
         """
         Request data from the M2M API and wait for completion, displaying
         progress with tqdm.
@@ -361,8 +369,7 @@ class RequestManager:
         details = f"{site}/{node}/{sensor}/{method}/{stream}"
 
         # Make the request
-        response = self.api_client.make_request(
-            M2MInterface.SENSOR_URL,
+        response = self.api_client.make_request(M2MInterface.SENSOR_URL,
             details, params)
 
         if 'allURLs' not in response:
@@ -441,3 +448,108 @@ class RequestManager:
         soup = BeautifulSoup(page_content, 'html.parser')
         return [node.get('href') for node in
                 soup.find_all('a', string=pattern)]
+
+    @staticmethod
+    def process_file(catalog_file: str,
+                     use_dask: bool = False) -> Dataset | None:
+        """
+        Download and process a NetCDF file into an xarray dataset.
+
+        Args:
+            catalog_file: URL or path to the NetCDF file.
+            use_dask: Whether to use dask for processing (for large files).
+
+        Returns:
+            The xarray dataset.
+        """
+        try:
+            # Convert the catalog file URL to the data URL
+            tds_url = ('https://opendap.oceanobservatories.org/thredds/'
+                       'fileServer/')
+            data_url = re.sub(r'catalog.html\?dataset=', tds_url,
+                              catalog_file)
+
+            # Download the dataset
+            r = requests.get(data_url, timeout=(3.05, 120))
+            if not r.ok:
+                warnings.warn(f"Failed to download {catalog_file}")
+                return None
+
+            # Load the data into an xarray dataset
+            data = io.BytesIO(r.content)
+            if use_dask:
+                ds = xr.open_dataset(data, decode_cf=False, chunks='auto',
+                                     mask_and_scale=False)
+            else:
+                ds = xr.load_dataset(data, decode_cf=False,
+                                     mask_and_scale=False)
+
+            # Process the dataset
+            ds = ds.swap_dims({'obs': 'time'}).reset_coords()
+            ds = ds.sortby('time')
+
+            # Drop unnecessary variables, clean time units
+            # TODO: May need adjusting
+            keys_to_drop = ['obs', 'id', 'provenance', 'driver_timestamp',
+                            'ingestion_timestamp']
+            ds = ds.drop_vars(
+                [key for key in keys_to_drop if key in ds.variables])
+
+            return ds
+        except Exception as e:
+            warnings.warn(f"Error processing {catalog_file}: {e}")
+            return None
+
+    def merge_frames(self, frames: List[xr.Dataset]) -> xr.Dataset:
+        """
+        Merge multiple datasets into a single xarray dataset.
+
+        Args:
+            frames: A list of xarray datasets to merge.
+
+        Returns:
+            The merged xarray dataset.
+        """
+        if len(frames) == 1:
+            return frames[0]
+
+        # Attempt to merge the datasets
+        try:
+            data = xr.concat(frames, dim='time')
+        except ValueError:
+            # If concatenation fails, attempt merging one by one
+            data, failed = self._frame_merger(frames[0], frames)
+            if failed > 0:
+                warnings.warn(f"{failed} frames failed to merge.")
+
+        # Sort by time and remove duplicates
+        data = data.sortby('time')
+        _, index = np.unique(data['time'], return_index=True)
+        data = data.isel(time=index)
+
+        return data
+
+    @staticmethod
+    def _frame_merger(
+            data: xr.Dataset, frames: List[xr.Dataset]) -> (xr.Dataset, int):
+        """
+        Helper function to merge datasets one-by-one if bulk concatenation
+        fails.
+
+        Args:
+            data: The initial dataset to merge.
+            frames: The remaining datasets to merge into the initial one.
+
+        Returns:
+            The merged dataset and a count of failed merges.
+        """
+        failed = 0
+        for frame in frames[1:]:
+            try:
+                data = xr.concat([data, frame], dim='time')
+            except (ValueError, NotImplementedError):
+                try:
+                    data = data.merge(frame, compat='override')
+                except (ValueError, NotImplementedError):
+                    failed += 1
+        return data, failed
