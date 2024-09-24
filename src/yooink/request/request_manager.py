@@ -33,6 +33,8 @@ class RequestManager:
             self,
             api_client: APIClient,
             data_manager: DataManager,
+            use_file_cache: bool = True,
+            cache_expiry: int = 14
     ) -> None:
         """
         Initializes the RequestManager with an instance of APIClient,
@@ -48,6 +50,72 @@ class RequestManager:
         """
         self.api_client = api_client
         self.data_manager = data_manager
+        self.cached_urls = {}
+        self.use_file_cache = use_file_cache
+        self.cache_expiry = cache_expiry
+
+        # Load cache if it's available
+        if self.use_file_cache:
+            self.load_cache_from_file()
+
+    def load_cache_from_file(self) -> None:
+        """
+        Loads the cached URLs from a JSON file and removes expired entries.
+        If the file is empty or contains invalid JSON, it initializes an empty
+        cache.
+        """
+        if not os.path.exists(self.CACHE_FILE):
+            return
+
+        try:
+            with open(self.CACHE_FILE, 'r') as file:
+                content = file.read().strip()
+
+                if not content:  # Check if file is empty
+                    print("Cache file is empty. Initializing new cache.")
+                    file_cache = {}
+                else:
+                    file_cache = json.loads(content)
+
+            # Filter out expired cache entries
+            current_time = time.time()
+            valid_cache = {
+                key: value for key, value in file_cache.items() if
+                current_time - value['timestamp'] < self.cache_expiry * 86400
+            }
+
+            self.cached_urls = valid_cache
+            self.save_cache_to_file()  # Save the updated cache
+
+        except json.JSONDecodeError:
+            print("Cache file contains invalid JSON. Initializing new cache.")
+            self.cached_urls = {}
+            self.save_cache_to_file()
+
+    def save_cache_to_file(self) -> None:
+        """
+        Saves the current cached URLs to a JSON file, appending new URLs to the
+        existing cache.
+        """
+        # Load existing cache if it exists
+        file_cache = {}
+        if os.path.exists(self.CACHE_FILE):
+            try:
+                with open(self.CACHE_FILE, 'r') as file:
+                    content = file.read().strip()
+                    if content:
+                        file_cache = json.loads(content)
+            except json.JSONDecodeError:
+                print(
+                    "Existing cache file contains invalid JSON. "
+                    "Overwriting with new cache.")
+
+        # Merge the in-memory cache with the file cache
+        file_cache.update(self.cached_urls)
+
+        # Write the cache to file
+        with open(self.CACHE_FILE, 'w') as file:
+            json.dump(file_cache, file)
 
     def list_sites(self) -> List[Dict[str, Any]]:
         """
@@ -306,27 +374,26 @@ class RequestManager:
                re.match(r'.*async_results.*', url)][0]
         check_complete = url + '/status.txt'
 
+        # Cache the URL now, as we've successfully submitted the request
+        self.cached_urls[f"{site}_{node}_{sensor}_{method}_{stream}"] = {
+            'url': url, 'timestamp': time.time()}
+
+        if self.use_file_cache:
+            self.save_cache_to_file()
+
         # Use tqdm to wait for completion
         print("Waiting for OOINet to process and prepare the data. This may "
               "take up to 20 minutes.")
-        with tqdm(total=400, desc='Waiting') as bar:
-            for _ in range(400):
-                try:
-                    r = self.api_client.session.get(check_complete, timeout=10)
-                    if r.status_code == 200:
-                        return response
-                    elif r.status_code == 404:
-                        # If it's a 404, the request might not be ready yet
-                        pass
-                    else:
-                        r.raise_for_status()
-                except requests.exceptions.Timeout:
-                    print("Request timed out. Retrying...")
-                except requests.exceptions.RequestException as e:
-                    print(f"Error checking status: {e}")
-
+        with tqdm(total=400, desc='Waiting', file=sys.stdout) as bar:
+            for i in range(400):
+                r = self.api_client.session.get(check_complete)
                 bar.update()
-                time.sleep(3)
+                bar.refresh()
+                if r.status_code == requests.codes.ok:
+                    bar.n = 400  # Complete the progress bar
+                    return response  # Data is ready
+                else:
+                    time.sleep(3)  # Wait 3 seconds between checks
 
         print("Data request timed out. Please try again later.")
         return None
