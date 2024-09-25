@@ -22,9 +22,8 @@ class DataFetcher:
         """Fetches the dataset for the given parameters."""
         # Fetch dataset URLs
         datasets = (
-            self.request_manager.fetch_data_urls(
-                site, node, sensor, method, stream,
-                begin_datetime, end_datetime)
+            self.request_manager.fetch_data(site, node, sensor, method, stream,
+                                            begin_datetime, end_datetime)
         )
 
         # Load the datasets into an xarray dataset
