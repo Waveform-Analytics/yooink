@@ -96,7 +96,7 @@ class DataFetcher:
         # stream(s)
         return node, sensor, stream
 
-    def data_request(
+    def get_dataset(
             self,
             site: str,
             assembly: str,
