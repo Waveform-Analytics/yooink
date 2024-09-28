@@ -23,3 +23,8 @@ keywords = ["OOI", "ocean observatory data"]
 Repository = "https://github.com/Waveform-Analytics/yooink"
 Documentation = "https://waveform-analytics.github.io/yooink/"
 Issues = "https://github.com/Waveform-Analytics/yooink/issues"
+
+[tool.hatch.build]
+
+# Exclude the dev folder, but not necessary .yml files in src
+exclude = ["dev/"]
