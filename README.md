@@ -3,7 +3,10 @@
 # yooink
 
 A Python package to access Ocean Observatories Initiative (OOI) data via 
-the m2m (machine to machine) interface. 
+the m2m (machine to machine) interface. This project has been built with 
+the help of various tutorials and examples provided by the OOI, most 
+notably [the python section of their repository](https://github.com/oceanobservatories/ooi-data-explorations/tree/master/python/ooi_data_explorations),
+which was written mostly (or entirely) by [Chris Wingard](https://github.com/cwingard) at OOI.
 
 ## Quick Setup
 

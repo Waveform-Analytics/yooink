@@ -18,9 +18,8 @@ class DataFetcher:
         self.token = token or os.getenv('OOI_TOKEN')
         self.api_client = APIClient(self.username, self.token)
         self.data_manager = DataManager()
-        self.request_manager = RequestManager(self.api_client,
-                                              self.data_manager,
-                                              use_file_cache=True)
+        self.request_manager = RequestManager(
+            self.api_client, use_file_cache=True)
 
     @staticmethod
     def filter_urls(

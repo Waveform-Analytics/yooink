@@ -27,7 +27,6 @@ class RequestManager:
     def __init__(
             self,
             api_client: APIClient,
-            data_manager: DataManager,
             use_file_cache: bool = True,
             cache_expiry: int = 14
     ) -> None:
@@ -43,7 +42,7 @@ class RequestManager:
                 (default 14 days).
         """
         self.api_client = api_client
-        self.data_manager = data_manager
+        self.data_manager = DataManager()
         self.cached_urls = {}
         self.use_file_cache = use_file_cache
         self.cache_expiry = cache_expiry
