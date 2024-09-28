@@ -4,8 +4,7 @@ from yooink import APIClient, RequestManager, DataManager
 from yooink.request import M2M_URLS
 
 import os
-from typing import List, Dict, Any
-from typing import Optional, Any
+from typing import List, Dict, Optional, Any
 import xarray as xr
 import numpy as np
 import pytz
@@ -18,9 +17,10 @@ class DataFetcher:
         self.username = username or os.getenv('OOI_USER')
         self.token = token or os.getenv('OOI_TOKEN')
         self.api_client = APIClient(self.username, self.token)
-        self.request_manager = RequestManager(self.api_client,
-                                              use_file_cache=True)
         self.data_manager = DataManager()
+        self.request_manager = RequestManager(self.api_client,
+                                              self.data_manager,
+                                              use_file_cache=True)
 
     @staticmethod
     def filter_urls(
@@ -109,8 +109,8 @@ class DataFetcher:
         Requests data via the OOI M2M API using the site code, assembly type,
         instrument class and data delivery method.
 
-        This function constructs the OOI specific data request using the parameters
-        defined in the m2m_urls.yml file.
+        This function constructs the OOI specific data request using the
+        parameters defined in the m2m_urls.yml file.
 
         Args:
             site: OOI site code as an 8 character string
@@ -212,8 +212,7 @@ class DataFetcher:
         # we only want the first one
         stream = stream[0][0] if isinstance(stream[0], list) else stream[0]
 
-        tag = f'.*{instrument.upper()}.*\\.nc$'  # set regex tag to use when
-                                                 # downloading
+        tag = f'.*{instrument.upper()}.*\\.nc$'  # set regex tag
         data: Optional[xr.Dataset] = None  # setup the default data set
 
         # Check if there are multiple instances of this instrument class on the
@@ -230,19 +229,19 @@ class DataFetcher:
                 print(
                     f'Requesting all {len(node)} instances of this '
                     f'instrument. Data sets will be concatenated\n'
-                    'and a new variable called `sensor_count` will be added to '
-                    'help distinguish the \n'
+                    'and a new variable called `sensor_count` will be added '
+                    'to help distinguish the \n'
                     'instruments for later processing.')
                 for i in range(len(node)):
-                    r = m2m_request(site, node[i], sensor[i], method, stream,
-                                    start, stop)
-                    if r:
-                        temp = m2m_collect(r, tag)
-                        temp['sensor_count'] = temp['deployment'] * 0 + i + 1
-                        if not data:
-                            data = temp
-                        else:
-                            data = xr.concat([data, temp], dim='time')
+                    temp = self.request_manager.fetch_data(
+                        site, node[i], sensor[i], method, stream, start, stop,
+                        tag=tag
+                    )
+                    temp['sensor_count'] = temp['deployment'] * 0 + i + 1
+                    if not data:
+                        data = temp
+                    else:
+                        data = xr.concat([data, temp], dim='time')
             else:
                 if aggregate > len(node):
                     raise SyntaxError(
@@ -252,11 +251,15 @@ class DataFetcher:
                 print(f'Requesting instrument {aggregate} out of {len(node)}.')
                 i = aggregate - 1
                 data = self.request_manager.fetch_data(
-                    site, node[i], sensor[i], method,stream, start, stop)
+                    site, node[i], sensor[i], method, stream, start, stop,
+                    tag=tag
+                )
 
         else:
             data = self.request_manager.fetch_data(
-                site, node[0], sensor[0], method, stream, start, stop)
+                site, node[0], sensor[0], method, stream, start, stop,
+                tag=tag
+            )
 
         if not data:
             raise RuntimeWarning(
