@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Optional
 from bs4 import BeautifulSoup
 from xarray import Dataset
 
-from yooink.api.client import APIClient, M2MInterface
-from yooink.data.data_manager import DataManager
+from yooink import APIClient, M2MInterface, DataManager
 
 import re
 import json
@@ -307,7 +306,7 @@ class RequestManager:
     def fetch_data(
             self, site: str, node: str, sensor: str, method: str,
             stream: str, begin_datetime: str, end_datetime: str,
-            use_dask=False) -> Dataset | None:
+            use_dask=False, tag: str = r'.*\.nc$') -> Dataset | None:
         """
         Fetch the URLs for netCDF files from the THREDDS server based on site,
         node, data, and method.
@@ -325,7 +324,8 @@ class RequestManager:
             check_complete = async_url + '/status.txt'
             response = self.api_client.session.get(check_complete)
             if response.status_code == requests.codes.ok:
-                datasets = self.get_filtered_files({'allURLs': [tds_url]})
+                datasets = self.get_filtered_files(
+                    {'allURLs': [tds_url]}, tag)
             else:
                 print(f"Data not ready yet for cached request: {cache_key}")
                 return None

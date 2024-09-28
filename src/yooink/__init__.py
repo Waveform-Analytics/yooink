@@ -6,7 +6,7 @@ from . import request
 from . import data
 
 # Import specific classes for direct access
-from .api.client import APIClient
+from .api.client import APIClient, M2MInterface
 from .request.request_manager import RequestManager
 from .data.data_manager import DataManager
 
@@ -17,5 +17,6 @@ __all__ = [
     'data',
     'APIClient',
     'RequestManager',
-    'DataManager'
+    'DataManager',
+    'M2MInterface'
 ]
