@@ -1,8 +1,21 @@
 # src/yooink/__init__.py
 
-# Import the necessary classes from their modules
+# Import submodules
+from . import api
+from . import request
+from . import data
+
+# Import specific classes for direct access
 from .api.client import APIClient
 from .request.request_manager import RequestManager
+from .data.data_manager import DataManager
 
-# Optionally, define __all__ to control what's exported when 'import *' is used
-__all__ = ['APIClient', 'RequestManager']
+# Define __all__ to control what gets imported with "from yooink import *"
+__all__ = [
+    'api',
+    'request',
+    'data',
+    'APIClient',
+    'RequestManager',
+    'DataManager'
+]
