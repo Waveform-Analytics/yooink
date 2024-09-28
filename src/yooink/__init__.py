@@ -9,7 +9,7 @@ from . import data
 from .data.data_manager import DataManager
 from .api.client import APIClient, M2MInterface
 from .request.request_manager import RequestManager
-from .data.ooi_data_summary import OOIDataSummary
+from .ooi_data_summary import ooi_data_summary
 
 # Define __all__ to control what gets imported with "from yooink import *"
 __all__ = [
@@ -20,5 +20,5 @@ __all__ = [
     'RequestManager',
     'DataManager',
     'M2MInterface',
-    'OOIDataSummary'
+    'ooi_data_summary'
 ]
