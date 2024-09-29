@@ -4,7 +4,6 @@ import os
 
 if __name__ == '__main__':
     processor = YAMLProcessor('m2m_urls.yml')
-    valid_methods = ['streamed', 'telemetered', 'recovered_host']
 
     output_csv = os.path.join(
         "..", "src", "yooink", "data", "data_combinations.csv")

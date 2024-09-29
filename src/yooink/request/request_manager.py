@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from bs4 import BeautifulSoup
 from xarray import Dataset
@@ -230,7 +230,7 @@ class RequestManager:
         return self.api_client.make_request(M2MInterface.DEPLOY_URL, endpoint)
 
     def get_sensor_information(
-            self, site: str, node: str, sensor: str, deploy: str | int
+            self, site: str, node: str, sensor: str, deploy: Union[int, str]
     ) -> list:
         """
         Retrieves sensor metadata for a specific deployment.
