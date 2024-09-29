@@ -4,16 +4,39 @@ theme:
   name: material
   features:
     - navigation.instant
+    - navigation.tabs
   logo: assets/logo.png
   favicon: assets/logo.png
   palette:
     primary: black
+  font:
+    text: "Roboto"
+
+extra_css:
+  - assets/css/custom.css
 
 markdown_extensions:
   - attr_list
   - md_in_html
 
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+
 nav:
   - Home: index.md
+  - Quick start:
+    - Introduction: quick_start/index.md
+    - API Setup: quick_start/api_setup.md
+    - Data Overview: quick_start/data_overview.md
+    - Simple Data Query: quick_start/simple_data_query.md
   - About: about.md
-  - Quick start: quick-start.md
+  - API Reference:
+    - Request Manager: api/request_manager.md
+    - Data Fetcher: api/data_fetcher.md
+    - Data Manager: api/data_manager.md
+    - API handler: api/api.md
