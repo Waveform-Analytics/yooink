@@ -9,5 +9,4 @@ the location of specific sensors. You can pan and zoom on this map and you can
 also click on the points to get some information about the instrument. 
 
 <iframe width="100%" height="910" frameborder="0"
-  src="https://observablehq.com/embed/78494d8e7d104e96@166?cells=viewof+map%2Cviewof+search%2Cviewof+rows"></iframe>
-
+  src="https://observablehq.com/embed/78494d8e7d104e96@167?cells=viewof+map%2Cviewof+search%2Cviewof+rows"></iframe>
