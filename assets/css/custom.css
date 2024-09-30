@@ -1,0 +1,12 @@
+.md-nav__link { /* Links in the TOC */
+    color: #333; /* Customize the color */
+}
+
+.md-nav__link:hover { /* Style on hover */
+    color: #007bff; /* Blue color on hover */
+}
+
+.md-nav__item--active > .md-nav__link { /* Active item styling */
+    font-weight: bolder;
+    color: #007bff;
+}
