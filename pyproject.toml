@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "yooink"
-version = "0.1.5"
+version = "0.1.6"
 authors = [
   { name="Michelle Weirathmueller", email="michelle@waveformanalytics.com" },
 ]
@@ -26,20 +26,15 @@ dependencies = [
     "python_dateutil==2.9.0.post0",
     "pytz==2024.2",
     "PyYAML==6.0.2",
-    "Requests==2.32.3",
+    "requests==2.32.3",  # Updated to lowercase
     "tomlkit==0.13.2",
     "tqdm==4.66.5",
     "xarray==2024.9.0",
 ]
-
 
 [project.urls]
 Repository = "https://github.com/Waveform-Analytics/yooink"
 Documentation = "https://waveform-analytics.github.io/yooink/"
 Issues = "https://github.com/Waveform-Analytics/yooink/issues"
 
-[tool.hatch.build]
-include = ["src/yooink/data/data_combinations.csv"]
 
-# Exclude the dev folder, but not necessary .yml files in src
-exclude = ["dev/"]

@@ -29,6 +29,7 @@ def parse_requirements(file):
             requirements[package] = version
     return requirements
 
+
 # 4. Function to update pyproject.toml
 def update_pyproject(pyproject_file, requirements):
     with open(pyproject_file, "r") as f:
