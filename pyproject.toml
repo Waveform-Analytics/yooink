@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "yooink"
-version = "0.1.4"
+version = "0.1.5"
 authors = [
   { name="Michelle Weirathmueller", email="michelle@waveformanalytics.com" },
 ]
@@ -18,6 +18,20 @@ classifiers = [
 ]
 license = {file = "LICENSE"}
 keywords = ["OOI", "ocean observatory data"]
+dependencies = [
+    "beautifulsoup4==4.12.3",
+    "munch==4.0.0",
+    "numpy==2.1.1",
+    "pandas==2.2.3",
+    "python_dateutil==2.9.0.post0",
+    "pytz==2024.2",
+    "PyYAML==6.0.2",
+    "Requests==2.32.3",
+    "tomlkit==0.13.2",
+    "tqdm==4.66.5",
+    "xarray==2024.9.0",
+]
+
 
 [project.urls]
 Repository = "https://github.com/Waveform-Analytics/yooink"
