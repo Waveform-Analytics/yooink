@@ -1,3 +1,7 @@
+## [0.1.7] - 2024-10-19
+### Changed
+- Updated dependencies to include h5netcdf, h5py, pyarrow, and netcdf4
+
 ## [0.1.4] - 2024-09-28
 ### Added
 - Simpler method for accessing data using m2m yaml summary file (see 
