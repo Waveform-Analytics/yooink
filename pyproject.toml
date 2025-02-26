@@ -19,21 +19,20 @@ classifiers = [
 license = {file = "LICENSE"}
 keywords = ["OOI", "ocean observatory data"]
 dependencies = [
-    "beautifulsoup4",
-    "munch",
-    "numpy>=1.21, <2.0",
-    "pandas>=2.0, <3",
-    "python_dateutil",
-    "pytz",
-    "PyYAML",
-    "requests",
-    "tomlkit>=0.13.2, <1.0",
-    "tqdm",
-    "xarray>=2024.9, <2025",
-    "pyarrow>=10.0, <14",
-    "h5py>=3.8, <4",
-    "netcdf4>=1.6, <2",
-    "h5netcdf"
+    "beautifulsoup4>=4.13.3",
+    "h5netcdf>=1.5.0",
+    "h5py>=3.13.0",
+    "munch>=4.0.0",
+    "numpy>=2.0.2",
+    "pandas>=2.2.3",
+    "pyarrow>=19.0.1",
+    "python-dateutil>=2.9.0.post0",
+    "pytz>=2025.1",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.3",
+    "tomlkit>=0.13.2",
+    "tqdm>=4.67.1",
+    "xarray>=2024.7.0",
 ]
 
 
